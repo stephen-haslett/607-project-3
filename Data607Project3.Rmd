@@ -1,0 +1,12 @@
+---
+title: "DATA 607 Project 3"
+author: Harris Dupre, Scott Reed, William Outcault, Diane DeOcampo, Stephen Haslett,
+  Samuel Kigamba, Emmanuel Hayble-Gomes
+date: "10/17/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
