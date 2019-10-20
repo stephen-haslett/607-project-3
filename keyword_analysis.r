@@ -30,3 +30,5 @@ ggplot(analysis_df, aes(x=Keyword,y = Pct_Frequency)) +
   labs(x="Keyword",y="Percentage") +
   theme(plot.title = element_text(hjust=0.5),plot.subtitle=element_text(hjust=0.5),axis.text.x = element_text(angle = 90,hjust=1,vjust=.5)) +
   scale_y_continuous(breaks = seq(0,25,by = 1))
+
+dbDisconnect(con)
