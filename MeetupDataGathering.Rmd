@@ -1,0 +1,81 @@
+---
+title: "Project 3 Meetup Data Gathering"
+author: "Scott Reed"
+date: "10/20/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Data Gathering of Meetup Event Data
+
+Data storage consists of a mysql database in the Microsoft Azure Cloud. 
+
+```{r echo=FALSE}
+library(purrr)
+library(RCurl)
+library(jsonlite)
+library(RMariaDB)
+library(DBI)
+library(textclean)
+library(readr)
+library(dplyr)
+library(rstudioapi)
+library(keyring)
+con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password=keyring::key_get("data607p3"))
+```
+
+First we select the candidate groups. This can be done using the meetup api, but they require Oauth and have an approval process to get credentials for searches, which time pressures made uncertain. So the API console was used to query, and then the json returns were combined in a local file. 
+
+3 Locations were queried, New York, San Jose, and London. 
+
+
+```{r}
+#You can fetch this using, but need Oauth e.g. nyGroups<-RCurl::getURI("https://api.meetup.com/find/groups?&sign=true&photo-host=public&location=New York, NY&topic_id=102811&page=20")
+dataGroups <-jsonlite::fromJSON(read_file("joinedDataScienceGroups.json"))
+
+```
+
+We then pipe the short "urlname" keys through to a map function getting the API endpoint for the past 100 events for each group.
+
+```{r}
+
+dataGroupsEvents <- dataGroups$urlname %>% purrr::map(~ RCurl::getURI(paste("https://api.meetup.com/", .x ,"/events?&sign=true&photo-host=public&page=100&status=past", sep="")))
+
+```
+
+Unfortunately the JSON returned isn't proper JSON and has a few validation errors that will trip up our importer. First we deal with a few improper escape sequences, and then fairly crudely excise a lot of charachters as there are some odd control chars in the return.
+
+```{r}
+dataGroupsEvents<-gsub("\\\\<","<", dataGroupsEvents)
+dataGroupsEvents<-gsub("\\\\B","B", dataGroupsEvents)
+dataGroupsEvents<-gsub('[^\x20-\x7E]',"", dataGroupsEvents)
+```
+
+
+We then filter out a couple of odd returns that don't seem to have any public events, and pull out the name, local date, and description. Sepereately we pull out the data from the subline object  "group" into a similar data set. 
+
+```{r}
+parsedEvents <- dataGroupsEvents %>% purrr::map(~ jsonlite::fromJSON(.x))
+evts <-parsedEvents %>% purrr::keep(~ all(c("name","local_date", "description") %in% colnames(.x)))  %>% purrr::map(~ select(.x,name,local_date,description,group))
+groupedData<-evts %>% purrr::map(~ select(.x$group, name,state,country)) %>% bind_rows() %>% rename(groupName = name)
+```
+
+We then then bind rows to concatenate our 58 groups data frames and finally bind columns into a single data set. 
+
+```{r}
+joinedEvents<-evts %>% purrr::map(~ select(.x,-group)) %>% bind_rows()
+eventStash<-bind_cols(joinedEvents,groupedData)
+```
+
+All that remains is to wipe out the HTML in the description field and write it to our database
+
+```{r}
+
+eventStash$description <- textclean::replace_html(eventStash$description)
+RMariaDB::dbWriteTable(con,"events",eventStash)
+```
