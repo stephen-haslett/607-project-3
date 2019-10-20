@@ -11,7 +11,7 @@ output: html_document
     margin-bottom: 50px !important;
   }
   pre {
-    rgin-bottom: 50px !important;
+    margin-bottom: 50px !important;
   }
 </style>
 
@@ -38,7 +38,7 @@ con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data
 ```
 
 
-###Read the "keyword_raw" database table and output the data as Bootstrap table.###
+###Read the "keyword_raw" database table and output the data as a Bootstrap table.###
 ```{r, eval=TRUE}
 keywords <- dbReadTable(con, "keyword_raw")
 keywords %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered'))
