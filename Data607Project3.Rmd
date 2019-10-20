@@ -1,7 +1,6 @@
 ---
 title: "DATA 607 Project 3"
-author: Harris Dupre, Scott Reed, William Outcault, Diane DeOcampo, Stephen Haslett,
-  Samuel Kigamba, Emmanuel Hayble-Gomes
+author: Harris Dupre, Scott Reed, William Outcault, Diane DeOcampo, Stephen Haslett, Samuel Kigamba, Emmanuel Hayble-Gomes
 date: "10/17/2019"
 output: html_document
 ---
@@ -10,3 +9,34 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```
+library(DBI)
+library(RMariaDB)
+library(data.table)
+library(dplyr)
+library(dbplyr)
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+library(stringr)
+
+# Connect to the MYSQL database containing the data science meetup data.
+con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password="!WORK,open,DOWN!")
+
+# Read the "keyword_raw" database table and output the data as Bootstrap table.
+keywords <- dbReadTable(con, "keyword_raw")
+keywords$Keyword
+#keywords %>% kable() %>% kable_styling(bootstrap_options = "basic")
+
+# Read the "events" database table and output the data as a Bootstrap table.
+meetup_events <- dbReadTable(con, "events")
+meetup_events %>% select(meetup_events, description)
+meetup_events %>% kable() %>% kable_styling(bootstrap_options = "basic")
+meetup_events$description
+
+termmatrix<-sapply(keywords$Keyword, function(x){str_count(meetup_events$description, x)})
+#find the sums of the columns to determine the number of times each term is used
+
+count_results<-colSums(termmatrix)
+count_results
+```
