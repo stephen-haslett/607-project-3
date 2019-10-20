@@ -1,0 +1,47 @@
+---
+title: "Meetup Data Analysis"
+author: "Scott Reed"
+date: "10/20/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RMariaDB)
+library(DBI)
+library(knitr)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(tidyr)
+con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password="XXX") 
+```
+
+## Get the data 
+
+We connect to our MySQL server and download the table
+
+```{r events}
+events<-DBI::dbReadTable(con,"events")
+events$local_date <- as.Date(events$local_date)
+kable(head(events))
+```
+
+## A glance at our data
+
+
+```{r pressure, echo=FALSE}
+events %>% group_by(month=floor_date(local_date,"month")) %>% tally() %>% ggplot(aes(x=month,y=n)) + geom_line()
+```
+
+## The rise of machine learning
+
+We can look at the plots and see that while analysis and machine learning were both fairly evenly listed in event descriptions, machine learning has taken off, and far exceeds analysis. 
+
+```{r}
+events$machine <-grepl("machine learning", events$description, ignore.case = TRUE)
+events$ai <-grepl("artificial intelligence", events$description, ignore.case = TRUE)
+events$analysis <-grepl("analysis", events$description, ignore.case = TRUE)
+events %>% group_by(month=floor_date(local_date,"month")) %>% summarize(total=n(),machine=sum(machine), ai=sum(ai),analysis=sum(analysis)) %>% gather(ctype,value,total,machine,ai,analysis) %>% ggplot(aes(month,value, group=ctype, color=ctype)) +geom_line()
+```
+
