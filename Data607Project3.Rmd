@@ -5,6 +5,16 @@ date: "10/17/2019"
 output: html_document
 ---
 
+<style>
+  table {
+    margin-top: 30px !important;
+    margin-bottom: 50px !important;
+  }
+  pre {
+    rgin-bottom: 50px !important;
+  }
+</style>
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -19,40 +29,52 @@ library(tidyverse)
 library(kableExtra)
 library(knitr)
 library(stringr)
+library(ggplot2)
 ```
 
-##Connect to the MYSQL database containing the data science meetup and keywords data.##
+###Connect to the MYSQL database containing the data science meetup and keywords data.###
 ```{r, eval=TRUE}
 con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password="!WORK,open,DOWN!")
 ```
 
 
-##Read the "keyword_raw" database table and output the data as Bootstrap table.##
+###Read the "keyword_raw" database table and output the data as Bootstrap table.###
 ```{r, eval=TRUE}
 keywords <- dbReadTable(con, "keyword_raw")
-keywords %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered')) %>% row_spec(row = 0, color = "black")
+keywords %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered'))
 ```
 
 
-##Read the "events" database table and output the data as a Bootstrap table.##
+###Read the "events" database table and output the data as a Bootstrap table.###
 ```{r, eval=TRUE}
 meetup_events <- dbReadTable(con, "events")
 meetup_events %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered'), full_width = TRUE) %>%
-  row_spec(row = 0, color = "black", font_size = 15) #%>%
-  #scroll_box(height = '300px')
+scroll_box(height = '300px')
 ```
 
 
-##Count the occurence of each keyword in the "description" column of the events database table.##
+###Count the occurence of each keyword in the "description" column of the events database table.###
 ```{r, eval=TRUE}
-keyword_scan<-sapply(keywords$Keyword, function(x){str_count(meetup_events$description, x)})
-#keyword_scan<-sapply(keywords$Keyword, function(x){str_count(as.data.frame('This'), x)})
-count_results<-colSums(keyword_scan)
-count_results
+keyword_scan<-sapply(keywords$Keyword, function(Keyword){str_count(meetup_events$description, Keyword)})
+
+count_results <- setNames(nm=c('Keyword','Frequency'), stack(colSums(keyword_scan))[2:1])
+count_results %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered')) %>% row_spec(0, color = "black")
 ```
 
 
-##Close the database connection.##
+###Plot the keyword frequency results as a histogram.###
+```{r, message=FALSE, warning=FALSE}
+results <- as.data.frame(count_results)
+
+frequency_chart <- ggplot(results, aes(x = reorder(Keyword, -Frequency), y = Frequency, fill = Keyword)) +
+                   geom_bar(stat = "identity", position = position_dodge()) +
+                   xlab("Keyword") + ylab("Frequency") +
+                   theme(axis.text.x = element_text(angle = 90)) +
+                   ggtitle("Total Keyword Frequency")
+frequency_chart
+```
+
+###Close the database connection.###
 ```{r, eval=TRUE}
 dbDisconnect(con)
 ```
