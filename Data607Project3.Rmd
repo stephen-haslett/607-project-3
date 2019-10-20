@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```
+```{r, message=FALSE, warning=FALSE}
 library(DBI)
 library(RMariaDB)
 library(data.table)
@@ -19,24 +19,40 @@ library(tidyverse)
 library(kableExtra)
 library(knitr)
 library(stringr)
+```
 
-# Connect to the MYSQL database containing the data science meetup data.
+##Connect to the MYSQL database containing the data science meetup and keywords data.##
+```{r, eval=TRUE}
 con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password="!WORK,open,DOWN!")
+```
 
-# Read the "keyword_raw" database table and output the data as Bootstrap table.
+
+##Read the "keyword_raw" database table and output the data as Bootstrap table.##
+```{r, eval=TRUE}
 keywords <- dbReadTable(con, "keyword_raw")
-keywords$Keyword
-#keywords %>% kable() %>% kable_styling(bootstrap_options = "basic")
+keywords %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered')) %>% row_spec(row = 0, color = "black")
+```
 
-# Read the "events" database table and output the data as a Bootstrap table.
+
+##Read the "events" database table and output the data as a Bootstrap table.##
+```{r, eval=TRUE}
 meetup_events <- dbReadTable(con, "events")
-meetup_events %>% select(meetup_events, description)
-meetup_events %>% kable() %>% kable_styling(bootstrap_options = "basic")
-meetup_events$description
+meetup_events %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered'), full_width = TRUE) %>%
+  row_spec(row = 0, color = "black", font_size = 15) #%>%
+  #scroll_box(height = '300px')
+```
 
-termmatrix<-sapply(keywords$Keyword, function(x){str_count(meetup_events$description, x)})
-#find the sums of the columns to determine the number of times each term is used
 
-count_results<-colSums(termmatrix)
+##Count the occurence of each keyword in the "description" column of the events database table.##
+```{r, eval=TRUE}
+keyword_scan<-sapply(keywords$Keyword, function(x){str_count(meetup_events$description, x)})
+#keyword_scan<-sapply(keywords$Keyword, function(x){str_count(as.data.frame('This'), x)})
+count_results<-colSums(keyword_scan)
 count_results
+```
+
+
+##Close the database connection.##
+```{r, eval=TRUE}
+dbDisconnect(con)
 ```
