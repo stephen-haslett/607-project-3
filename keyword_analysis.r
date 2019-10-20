@@ -24,6 +24,8 @@ keyword_analysis <- mutate(keyword_analysis, Total=sum(Sum_Frequency))
 keyword_analysis <- mutate(keyword_analysis, Pct_Frequency=round(Sum_Frequency/Total,3)*100)
 analysis_df <-as.data.frame(keyword_analysis)
 
+dbWriteTable(con,"keyword_analysis_df",analysis_df)
+
 ggplot(analysis_df, aes(x=Keyword,y = Pct_Frequency)) +
   geom_bar(width = .75,stat = "identity", position="dodge") +
   ggtitle("Relative Frequency of Keywords In Data Science Job Listings", subtitle="Sites: Monster, SimplyHired, Indeed, LinkedIn") +
