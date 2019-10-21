@@ -115,6 +115,8 @@ kable(head(Course_desc[c(1,3)]))
 
 ### School Analysis
 
-```{r}
 
+```{r}
+courses <- spread(Course_desc[c(1,3)],school,count)
+barplot(as.numeric(courses) ,names.arg = colnames(courses))
 ```
