@@ -34,15 +34,15 @@ library(ggplot2)
 
 keyword_raw <- read.csv("data_science_keywords.csv", header=TRUE, sep=",")
 
-con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password="!WORK,open,DOWN!")
+con <- dbConnect(MariaDB(), host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password="!WORK,open,DOWN!")
 
-dbWriteTable(con,"keyword_raw",keyword_raw)
+dbWriteTable(con,"keyword_raw",keyword_raw, overwrite=TRUE)
 
 keyword_tidy <- gather(keyword_raw, "Site", "Frequency",2:5)
 keyword_tidy$Frequency<- as.numeric(gsub(",","",keyword_tidy$Frequency))
 keyword_tidy
 
-dbWriteTable(con, "keyword_tidy", keyword_tidy)
+dbWriteTable(con, "keyword_tidy", keyword_tidy, overwrite=TRUE)
 
 
 ```
@@ -56,7 +56,7 @@ keyword_analysis <- mutate(keyword_analysis, Total=sum(Sum_Frequency))
 keyword_analysis <- mutate(keyword_analysis, Pct_Frequency=round(Sum_Frequency/Total,3)*100)
 analysis_df <-as.data.frame(keyword_analysis)
 
-dbWriteTable(con,"keyword_analysis_df",analysis_df)
+dbWriteTable(con,"keyword_analysis_df",analysis_df, overwrite=TRUE)
 ```
 
 #### Plotting Data
