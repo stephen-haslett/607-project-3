@@ -1,0 +1,120 @@
+---
+title: "Project 3 Attempt"
+author: "Emmanuel Hayble-Gomes"
+date: "10/20/2019"
+output: html_document
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rvest)
+library(tidyverse)
+library(stringr)
+library(purrr)
+library(dplyr)
+library(knitr)
+```
+
+My intention here is to scrape course description and curriculum for several universities and college for the data science course taught at the universities.
+
+Specifying the url for desired websites to be scrapped
+
+```{r}
+url1 <- "https://www.gc.cuny.edu/Page-Elements/Academics-Research-Centers-Initiatives/Masters-Programs/Data-Science/Curriculum-and-Courses"
+url2 <- "https://www.gc.cuny.edu/Page-Elements/Academics-Research-Centers-Initiatives/Masters-Programs/Data-Science/Curriculum-and-Courses"
+url3 <- "https://datascience.columbia.edu/master-of-science-in-data-science"
+url4 <- "https://datascience.duke.edu/mids-courses"
+url5 <- "http://catalog.cofc.edu/preview_program.php?catoid=13&poid=2778&hl=%22data+science%22&returnto=search"
+url6 <- "https://www.cgu.edu/academics/program/ms-information-systems-and-technology/"
+url7 <- "https://www.chapman.edu/scst/graduate/ms-computational-science.aspx"
+url8 <- "https://calbaptist.edu/programs/data-sciences-minor/"
+url9 <- "https://mcds.cs.cmu.edu/learn-us-curriculum"
+url10 <- "https://www.brown.edu/initiatives/data-science/masters-degree/curriculum"
+url11 <- "https://www.american.edu/programs/shared/data-science/"
+```
+
+Reading the HTML code from the website
+
+```{r}
+webpage1 <- read_html(url1)
+webpage2 <- read_html(url2)
+webpage3 <- read_html(url3)
+webpage4 <- read_html(url4)
+webpage5 <- read_html(url5)
+webpage6 <- read_html(url6)
+webpage7 <- read_html(url7)
+webpage8 <- read_html(url8)
+webpage9 <- read_html(url9)
+webpage10 <- read_html(url10)
+webpage11 <- read_html(url11)
+```
+
+Scrape Curriculum and Course Description for Data Science
+```{r}
+cuny <- html_nodes(webpage1, "article#main-content")
+harvard <- html_nodes(webpage2, "article#main-content")
+columbia <- html_nodes(webpage3, "div#content")
+duke <- html_nodes(webpage4, "div#Content.row")
+charleston <- html_nodes(webpage5, "body")
+claremont <- html_nodes(webpage6, "body")
+chapman <- html_nodes(webpage7, "div.main")
+california_bap <- html_nodes(webpage8, "div.page-main-content")
+carnegie <- html_nodes(webpage9, "div#page")
+brown <- html_nodes(webpage10, "main")
+american <- html_nodes(webpage11, "main#main-container")
+```
+
+
+```{r}
+cuny <- html_text(cuny)
+harvard <- html_text(harvard)
+columbia <- html_text(columbia)
+duke <- html_text(duke)
+charleston <- html_text(charleston)
+claremont <- html_text(claremont)
+chapman <- html_text(chapman)
+california_bap <- html_text(california_bap)
+carnegie <- html_text(carnegie)
+brown <- html_text(brown)
+american <- html_text(american)
+```
+
+
+```{r}
+Course_desc <- bind_rows(data.frame(c("cuny", "harvard", "duke", "charleston", "claremont", "chapman", "california_bap",
+                 "carnegie", "brown", "american"
+                 ),c(cuny,harvard,duke,charleston,claremont,chapman,california_bap, carnegie, brown,american)))
+
+colnames(Course_desc) <- c("school", "description")
+
+Course_desc$description <- textclean::replace_html(Course_desc$description)
+
+Keywords <- bind_rows(data.frame(Keywords = c(
+  "Machine Learning", "Cloud Computing", "Data Mining","Data Science Seminar", "Numerical Linear Algebra",
+            "Discrete Mathematics", "Algorithms", "Optimization", "Stochastic",
+            "Probability", "Statistical Inference", "Regression", "Statistical Modeling", "Data Mining", "Software Design","Natural Language Processing", "NLP",
+  "Neural Networks", "Big Data", "Linear and Nonlinear Models", "Capstone", "Tableau", "Mathematics and Statistics", "Computer Science", "Engineering",
+  "Big Data", "Hadoop", "R", "Python", "SQL", "MySQL", "NoSQL", "Apache Spark")))
+write.csv(Keywords, file= "Keywords.csv")
+Keywords <- read.csv('https://raw.githubusercontent.com/Emahayz/Data-607-Class/master/Keywords.csv')
+```
+
+
+```{r}
+KeywordsChar <- as.character(Keywords$Keywords)
+Course_desc$count <- rep(0,nrow(Course_desc))
+for (i in 1:length(KeywordsChar)) {
+  for (j in 1:nrow(Course_desc)) {
+    if(grepl(KeywordsChar[i],Course_desc[j,2]) == 1){
+      Course_desc[j,"count"] <- Course_desc[j,"count"] + 1
+    }
+  }
+}
+kable(head(Course_desc[c(1,3)]))
+```
+
+### School Analysis
+
+```{r}
+
+```
