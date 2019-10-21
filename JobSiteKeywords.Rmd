@@ -1,0 +1,46 @@
+---
+title: "Hiring Sites Data"
+author: "Harris Dupre, trans. Scott Reed"
+date: "10/20/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(RMariaDB)
+library(DBI)
+library(knitr)
+library(ggplot2)
+con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password="!WORK,open,DOWN!") 
+```
+
+## Gather Data
+
+We cut and simplify the jobsites data
+
+```{r}
+keyword_raw <- read.csv("data_science_keywords.csv", header=TRUE, sep=",") %>% mutate_at(2:5, as.numeric)
+
+
+```
+
+## Tidy
+
+We gather by the site names (columns 2-5), and then store the table on the mySQL server
+
+```{r pressure, echo=FALSE}
+keyword_tidy <- gather(keyword_raw, "Site", "Frequency",2:5)
+kable(head(keyword_tidy))
+dbWriteTable(con,name = "jobSiteKeywords", keyword_tidy , overwrite=TRUE)
+```
+
+
+### Plot
+
+Looking at teh data we can see that Computer Science, and Machine Learning are both relatively unpopular on Monster. 
+
+```{r}
+keyword_tidy %>% filter(Keyword %in% keyword_raw$Keyword[1:5]) %>% ggplot(aes(Keyword,Frequency, group=Site,color=Site))+geom_line()
+```
