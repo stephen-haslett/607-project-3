@@ -1,0 +1,73 @@
+---
+title: "Job Listing Keyword Analysis"
+author:
+date: "10/20/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Introduction
+
+The goal of this analysis will be to determine the relative appearance of keywords in job listings on Monster, SimplyHired, LinkedIn, and Indeed.
+
+The idea for this analysis came from the following article that discusses the most in-demand skills by employers seeking data scientists:
+https://towardsdatascience.com/the-most-in-demand-skills-for-data-scientists-4a4a8db896db
+
+The raw data is provided in the following Google Sheet:
+https://docs.google.com/spreadsheets/d/1df7QTgdAOItQJadLoMHlIZH3AsQ2j2_yoyvHOpsy9qU/edit#gid=1072460513
+
+```{r message=FALSE}
+library(tidyr)
+library(dplyr)
+library(RMariaDB)
+library(stringr)
+library(stringi)
+library(ggplot2)
+```
+
+#### Importing, Loading to Database, Tidying
+
+```{r}
+
+keyword_raw <- read.csv("data_science_keywords.csv", header=TRUE, sep=",")
+
+con <- dbConnect(MariaDB(),host="data607.mysql.database.azure.com", dbname="data607",username="data607@data607", client.flag = CLIENT_COMPRESS, password="!WORK,open,DOWN!")
+
+dbWriteTable(con,"keyword_raw",keyword_raw)
+
+keyword_tidy <- gather(keyword_raw, "Site", "Frequency",2:5)
+keyword_tidy$Frequency<- as.numeric(gsub(",","",keyword_tidy$Frequency))
+keyword_tidy
+
+dbWriteTable(con, "keyword_tidy", keyword_tidy)
+
+
+```
+
+#### Transformation for Analysis
+
+```{r}
+keyword_analysis <- group_by(keyword_tidy, Keyword)
+keyword_analysis <- summarize(keyword_analysis, Sum_Frequency = sum(Frequency))
+keyword_analysis <- mutate(keyword_analysis, Total=sum(Sum_Frequency))
+keyword_analysis <- mutate(keyword_analysis, Pct_Frequency=round(Sum_Frequency/Total,3)*100)
+analysis_df <-as.data.frame(keyword_analysis)
+
+dbWriteTable(con,"keyword_analysis_df",analysis_df)
+```
+
+#### Plotting Data
+
+```{r}
+ggplot(analysis_df, aes(x=Keyword,y = Pct_Frequency)) +
+  geom_bar(width = .75,stat = "identity", position="dodge") +
+  ggtitle("Relative Frequency of Keywords In Data Science Job Listings", subtitle="Sites: Monster, SimplyHired, Indeed, LinkedIn") +
+  labs(x="Keyword",y="Percentage") +
+  theme(plot.title = element_text(hjust=0.5),plot.subtitle=element_text(hjust=0.5),axis.text.x = element_text(angle = 90,hjust=1,vjust=.5)) +
+  scale_y_continuous(breaks = seq(0,25,by = 1))
+
+dbDisconnect(con)
+```
